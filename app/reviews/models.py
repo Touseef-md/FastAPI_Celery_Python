@@ -1,12 +1,10 @@
 # models.py
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from project.database import Base, engine
+from app.database import Base, engine
 from datetime import datetime
 
-print("Review model  file called")
 class Category(Base):
-    print("Class category called")
     __tablename__ = 'categories'
 
     id = Column(Integer, primary_key=True, index=True)
@@ -16,7 +14,6 @@ class Category(Base):
     reviews = relationship("ReviewHistory", back_populates="category")
 
 class ReviewHistory(Base):
-    print("Class reviewHIstory called")
     __tablename__ = 'review_history'
 
     id = Column(Integer, primary_key=True, index=True)
