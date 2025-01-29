@@ -16,7 +16,10 @@ async def log_requests(request: Request, call_next):
     - response (Response): The HTTP response returned by the next middleware or the actual endpoint.
     """
 
-    log_access.delay(request.method +" "+ request.url.path + request.url.query)
+    text = request.method + " " + request.url.path
+    if request.url.query:
+        text += "?" + request.url.query
+    log_access.delay(text)
 
     response = await call_next(request)
     return response
