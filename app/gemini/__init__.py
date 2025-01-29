@@ -11,7 +11,7 @@ class GeminiResponse(typing.TypedDict):
     tone: str
     sentiment: str
 
-async def analyze_tone_and_sentiment(review_text, stars):
+def analyze_tone_and_sentiment(review_text, stars):
     prompt = f"""Analyze the following review:\n\nReview: \"{review_text}\"\nStars: {stars}\n\nProvide the tone and sentiment of the review. \n Use this JSON schema to answer:\n
     {{
     "tone": "",
