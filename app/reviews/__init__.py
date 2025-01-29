@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from app.reviews.models import Category, ReviewHistory
-from app.reviews.schemas import CategoryTrend
+from app.reviews.schemas import CategoryTrend, ReviewResponse
 from app.database import get_db
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -13,7 +13,7 @@ review_router = APIRouter(
     prefix="/reviews",
 )
 
-@review_router.get("/trends")
+@review_router.get("/trends", response_model = List[CategoryTrend])
 async def get_trends(db: Session = Depends(get_db)):
     """
     Retrieve the top 5 categories with the highest average stars based on the latest reviews.
@@ -58,19 +58,7 @@ async def get_trends(db: Session = Depends(get_db)):
     result =  db.execute(stmt)
     categories = result.fetchall()
 
-    # Transform results into the response model
-    trends = [
-        CategoryTrend(
-            id=category.id,
-            name=category.name,
-            description=category.description,
-            average_stars=category.average_stars,
-            total_reviews=category.total_reviews
-        )
-        for category in categories
-    ]
-
-    return trends
+    return categories
 
 @review_router.get("/addReview")
 def add_review(db: Session = Depends(get_db)):
@@ -90,8 +78,8 @@ def add_review(db: Session = Depends(get_db)):
     return hist
     
 
-@review_router.get("/")
-async def get_reviews(category_id: int, cursor: Optional[datetime] = None, page_size: int = 15, db: Session = Depends(get_db)):
+@review_router.get("/", response_model=List[ReviewResponse])
+def get_reviews(category_id: int, cursor: Optional[datetime] = None, page_size: int = 15, db: Session = Depends(get_db)):
     """
     Retrieve a list of reviews for a specific category.
 
@@ -113,18 +101,22 @@ async def get_reviews(category_id: int, cursor: Optional[datetime] = None, page_
         query = query.filter(ReviewHistory.created_at < cursor)
 
     reviews = query.order_by(ReviewHistory.created_at.desc()).limit(page_size).all()
-
     if not reviews:
         raise HTTPException(status_code=404, detail="No reviews found")
 
-    await update_reviews_with_analysis(reviews, db)
-    return reviews
+    return update_reviews_with_analysis(reviews, db)
 
-async def update_reviews_with_analysis(reviews : List[ReviewHistory], db: Session):
+def update_reviews_with_analysis(reviews : List[ReviewHistory], db: Session):
 
     for review in reviews:
-        response = await analyze_tone_and_sentiment(review.text, review.stars)
-        review.tone = response['tone']
-        review.sentiment = response['sentiment']
-        db.add(review)
+        if review.text == None and review.stars == None:
+            response = analyze_tone_and_sentiment(review.text, review.stars)
+            review.tone = response['tone']
+            review.sentiment = response['sentiment']
+            db.add(review)
     db.commit()
+    
+    # Refresh each review instance to ensure attributes are up-to-date
+    for review in reviews:
+        db.refresh(review)
+    return reviews
