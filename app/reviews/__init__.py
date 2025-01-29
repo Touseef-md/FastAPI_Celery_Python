@@ -67,23 +67,7 @@ async def get_trends(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while executing the SQL query: {str(e)}")
 
-@review_router.get("/addReview")
-def add_review(db: Session = Depends(get_db)):
-    #Adding review History
-    hist = ReviewHistory()
-    hist.text = "This review 30"
-    hist.stars = 4
-    hist.review_id = "30"
-    # hist.tone = "Bad"
-    # hist.sentiment = "Bad"
-    hist.category_id = 1
-    hist.created_at = datetime.now()
-    hist.updated_at = datetime.now()
-    db.add(hist)
-    db.commit()
-    db.refresh(hist)
-    return hist
-    
+
 
 @review_router.get("/", response_model=List[ReviewResponse])
 def get_reviews(category_id: int, cursor: Optional[datetime] = None, page_size: int = 15, db: Session = Depends(get_db)):
