@@ -19,16 +19,20 @@ def analyze_tone_and_sentiment(review_text, stars):
     }}"""
 
     model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content(prompt)
+    try:
+        
+        response = model.generate_content(prompt)
 
-    # Use a regular expression to extract the JSON content
-    match = re.search(r'```json\n({.*})\n```', response.text, re.DOTALL)
-    if match:
-        json_str = match.group(1)
-        try:
+        # Use a regular expression to extract the JSON content
+        match = re.search(r'```json\n({.*})\n```', response.text, re.DOTALL)
+        if match:
+            json_str = match.group(1)
             response_dict = json.loads(json_str)
             return {"tone": response_dict['tone'], "sentiment": response_dict['sentiment']}
-        except json.JSONDecodeError:
-            print("Error: Extracted text is not valid JSON.")
-    else:
-        print("Error: No JSON content found in the response.")
+        else:
+            print("Error: No JSON content found in the response.")
+        return None
+    
+    except Exception as e:
+        print("Exception while analyzing tone and sentiment: ", str(e))
+        raise
